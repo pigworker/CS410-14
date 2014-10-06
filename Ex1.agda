@@ -33,6 +33,15 @@ data Tree (X : Set) : Set where
   leaf : Tree X
   _<[_]>_ : Tree X -> X -> Tree X -> Tree X
 
+{-
+data Tree x = Leaf | Node (Tree X) X (Tree X)
+Leaf :: Tree x
+Node :: Tree x -> x -> Tree x -> Tree x
+-}
+
+demoTree : Tree Nat
+demoTree = ({!!} <[ 3 ]> {!!}) <[ 5 ]> {!!}
+
 -- 1.1.2 implement the insertion of a number into a tree, ensuring that
 -- the numbers in the tree are in increasing order from left to right;
 -- make sure to retain duplicates
@@ -78,6 +87,7 @@ fastTreeSort : List Nat -> List Nat
 fastTreeSort xs = {!!}
 
 -- 1.1.9 again, give unit tests which cover every line of code
+
 
 
 {----------------------------------------------------------------------------}

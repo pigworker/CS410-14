@@ -123,12 +123,12 @@ Step 7. Assuming all of that worked just fine, set up the Emacs interactive envi
 Step 8. Get this repository. Navigate to where in your file system you want
 to keep it and do
 \[
-\mbox{\texttt{git clone https://github.com/pigworker/CS410-13.git}}
+\mbox{\texttt{git clone https://github.com/pigworker/CS410-14.git}}
 \]
 
 Step 9. Navigate into the repo.
 \[
-\mbox{\texttt{cd CS410-13}}
+\mbox{\texttt{cd CS410-14}}
 \]
 
 Step 10. Start an emacs session involving an Agda file, e.g., by the command:
