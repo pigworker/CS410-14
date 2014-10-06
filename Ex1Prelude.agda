@@ -5,8 +5,6 @@ data Nat : Set where
   suc   : Nat -> Nat
 
 {-# BUILTIN NATURAL  Nat   #-}
-{-# BUILTIN ZERO     zero  #-}
-{-# BUILTIN SUC      suc   #-}
 
 _+_ : Nat -> Nat -> Nat
 zero   + n  = n
@@ -43,17 +41,6 @@ data List (X : Set) : Set where
   _:>_  : X -> List X -> List X
 
 infixr 5 _:>_
-
-postulate
-      Level : Set
-      lzero  : Level
-      lsuc   : Level -> Level
-      lmax   : Level -> Level -> Level
-
-{-# BUILTIN LEVEL     Level #-}
-{-# BUILTIN LEVELZERO lzero  #-}
-{-# BUILTIN LEVELSUC  lsuc   #-}
-{-# BUILTIN LEVELMAX  lmax   #-}
 
 data _==_ {l}{X : Set l}(x : X) : X -> Set l where
   refl : x == x
