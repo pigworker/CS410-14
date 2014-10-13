@@ -62,7 +62,7 @@ _<?>_ :   {S T X : Set} ->
 
 infixr 2 _/*/_
 
-record _/*/_ (S T : Set) : Set where
+record _/*/_ (S T : Set) : Set where  -- (S , T)
   constructor _,_
   field
     outl  : S
