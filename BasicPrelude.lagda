@@ -32,8 +32,6 @@ data Nat : Set where
   suc   : Nat -> Nat
 
 {-# BUILTIN NATURAL  Nat   #-}
-{-# BUILTIN ZERO     zero  #-}
-{-# BUILTIN SUC      suc   #-}
 \end{code}
 
 The funny comment-like BUILTIN things are not comments, but
@@ -384,17 +382,6 @@ data _==_ {X : Set}(x : X) : X -> Set where
 
 %if False
 \begin{code}
-postulate
-      Level : Set
-      lzero  : Level
-      lsuc   : Level -> Level
-      lmax   : Level -> Level -> Level
-
-{-# BUILTIN LEVEL     Level #-}
-{-# BUILTIN LEVELZERO lzero  #-}
-{-# BUILTIN LEVELSUC  lsuc   #-}
-{-# BUILTIN LEVELMAX  lmax   #-}
-
 data _==_ {l}{X : Set l}(x : X) : X -> Set l where
   refl : x == x
 infix 4 _==_

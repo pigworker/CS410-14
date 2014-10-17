@@ -22,6 +22,7 @@
 \newcommand{\whiteFG}[1]{\textcolor[rgb]{1,1,1}{#1}}
 \newcommand{\yellowBG}[1]{\colorbox[rgb]{1,1,0.2}{#1}}
 \newcommand{\brownBG}[1]{\colorbox[rgb]{1.0,0.7,0.4}{#1}}
+\newcommand{\greenBG}[1]{\colorbox[rgb]{0.7,1.0,0.7}{#1}}
 
 \newcommand{\ColourStuff}{
   \newcommand{\red}{\redFG}

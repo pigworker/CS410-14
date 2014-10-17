@@ -35,8 +35,8 @@ leaves (d +++ e) = {!leaves d ++ leaves e!}
 data HCode : Nat -> Nat -> Set where
   PUSH : {i : Nat} -> Nat -> HCode i (suc i)
   ADD : {i : Nat} -> HCode (suc (suc i)) (suc i)
-  _SEQ_ : {i j k : Nat} -> HCode i j -> HCode j k -> HCode i k
-infixr 3 _SEQ_
+  _-SEQ-_ : {i j k : Nat} -> HCode i j -> HCode j k -> HCode i k
+infixr 3 _-SEQ-_
 
 data Vec (X : Set) : Nat -> Set where
   [] : Vec X zero
@@ -45,8 +45,13 @@ data Vec (X : Set) : Nat -> Set where
 exec : {i j : Nat} -> HCode i j -> Vec Nat i -> Vec Nat j
 exec (PUSH x) s = x , s
 exec ADD (x , (y , s)) = (y + x) , s
-exec (h SEQ k) s = exec k (exec h s)
+exec (h -SEQ- k) s = exec k (exec h s)
+
+exec' : (i j : Nat) -> HCode i j -> Vec Nat i -> Vec Nat j
+exec' i .(suc i) (PUSH x) s = x , s
+exec' .(suc (suc i)) .(suc i) (ADD {i}) s = {!!}
+exec' i j (c -SEQ- c₁) s = {!!}
 
 compile : HExp -> {i : Nat} -> HCode i (suc i)
 compile (val n) = PUSH n
-compile (d +++ e) = compile d SEQ compile e SEQ ADD
+compile (d +++ e) = compile d -SEQ- compile e -SEQ- ADD
