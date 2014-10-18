@@ -326,7 +326,7 @@ so that the goal becomes
 \[
  |execI ADD (eval e2 :> eval e1 :> s) == (eval e1 + eval e2) :> s|
 \]
-Now, the left-hand side computes to the right-hand side, so |refl| brings us home.
+Now,xs the left-hand side computes to the right-hand side, so |refl| brings us home.
 
 You can compute
 \[
@@ -334,3 +334,120 @@ You can compute
 \]
 and be glad of the answer |4|, but be aware that you now work in a world where you can show
 that your program is \emph{always} correct, for all possible inputs.
+
+
+\section{Hutton's Razor with Variables}
+
+%format HExpV = "\F{HExp}"
+%format var = "\C{var}"
+
+So far, we have considered \emph{closed} expressions built from
+operators and constants. When we implement functions, we often work
+with \emph{open} expressions which also contain \emph{variables},
+e.g., the formal parameters of the functions. We can extend our little
+syntax to allow for this possibility.
+
+\begin{code}
+data HExpV (V : Set) : Set where
+  var    : V -> HExpV V
+  val    : Nat -> HExpV V
+  _+++_  : HExpV V -> HExpV V -> HExpV V
+\end{code}
+
+Our type has acquired a parameter |V|, being the set of variables which
+may occur in expressions, and an extra constructor, |var| which makes
+every variable an expression. I encourage you to think of |V| not as the
+set of syntactically valid identifiers, but rather as the set of variables
+\emph{in scope}. Correspondingly, we should be able to evaluate expressions
+if we give a value for each of the variables which may occur in them. An
+assignment of values to variables is called an \textbf{environment}, and
+here we may represent such a thing simply as a function of type |V -> Val|.
+
+%format evalV = "\F{eval}"
+%format gam = "\V{\gamma}"
+\begin{code}
+evalV : {V : Set} -> HExpV V -> (V -> Val) -> Val
+evalV (var x)      gam  = gam x
+evalV (val n)      gam  = n
+evalV (e1 +++ e2)  gam  = evalV e1 gam + evalV e2 gam
+\end{code}
+
+For example, we might have two variables, represented by the elements of |Two|.
+%format myHExp = "\F{myHExp}"
+\begin{code}
+myHExp : HExpV Two
+myHExp = ((val 1 +++ var tt) +++ (var tt +++ var ff))
+\end{code}
+\[
+ |(evalV myHExp \ { tt -> 7 ; ff -> 11 }) == 26|
+\]
+\textbf{Notation.~} In Agda, the scope of a |\| extends as far as possible to the
+right, so there is a common tendency not to parenthesize |\|-abstractions when
+they are the last argument to a function. Meanwhile, the braces-and-semicolons
+notation allows you to do a little bit of local case-splitting inside a
+|\|-abstraction, used here to give a different value to each variable.
+
+We can recover plain Hutton's Razor by making variables impossible: all expressions
+in |HExpV Zero| are \emph{closed}. Indeed one motivation for bothering with |Zero|
+is to give a uniform treatment to open and closed expressions, but recover closed
+expressions specifically whenever we need them. If we have no variables, we can
+evaluate without an environment as before, or rather, it is easy to come up with an
+environment which assigns values to all none of the variables.
+%format eval0 = "\F{eval0}"
+\begin{code}
+eval0 : HExpV Zero -> Nat
+eval0 e = evalV e magic
+\end{code}
+
+
+\section{Simultaneous Substitution for Open Expressions}
+
+Environments map variables to values, but that is not all we can do with variables
+in expressions. In particular, we may systematically replace variables by expressions,
+performing \emph{substitution}.
+%format subst = "\F{subst}"
+%format sg = "\V{\sigma}"
+\begin{code}
+subst : {U V : Set} -> HExpV U -> (U -> HExpV V) -> HExpV V
+subst (var x)      sg  = sg x
+subst (val n)      sg  = val n
+subst (e1 +++ e2)  sg  = subst e1 sg +++ subst e2 sg
+\end{code}
+The function |sg : U -> HExpV V| maps each variable in |U| to some expression whose
+variables are drawn from |V|. We can roll out this substitution to all the variables
+in a |HExpV U| to get a |HExpV V|: because we act on all the variables, not just one
+of them, we call this operation \emph{simultaneous} substitution.
+
+Substitution is a lot like evaluation, but where |evalV| extends our
+original evaluation algebra with an environment, |subst| extends the
+original free algebra with the substitution. We can prove a useful fact relating
+the two.
+%format evalSubstFact = "\F{evalSubstFact}"
+\begin{code}
+evalSubstFact :  {U V : Set}(e : HExpV U)(sg : U -> HExpV V)(gam : V -> Val) ->
+                 (evalV (subst e sg) gam) == (evalV e \ u -> evalV (sg u) gam)
+evalSubstFact (var x) sg gam = refl
+evalSubstFact (val n) sg gam = refl
+evalSubstFact (e1 +++ e2) sg gam
+  rewrite evalSubstFact e1 sg gam | evalSubstFact e2 sg gam
+  = refl
+\end{code}
+If you substitute then evaluate, you get the same answer as if you build an
+environment from the substitution. The proof is an easy induction on expressions,
+rewriting the goal for |e1 +++ e2| by both inductive hypotheses. Why is this
+fact useful? It tells us that the typical way we evaluate function calls is
+sensible: when we give the \emph{actual} parameters to a function, they are
+expressions, and what we do in theory is substitute those \emph{expressions} for the
+formal parameters and evaluate, but what we really do is evaluate the actual
+parameters to construct an environment which assigns \emph{values} to the formal
+parameters.
+
+A special case of this useful fact is that, if we had to, we could make do with
+evaluation for \emph{closed} terms only by turning the environment into a
+substitution, replacing each variable by a numerical constant.
+%format eval0Fact = "\F{eval0Fact}"
+\begin{code}
+eval0Fact :  {V : Set}(e : HExpV V)(gam : V -> Val) ->
+             eval0 (subst e (val o gam)) == evalV e gam
+eval0Fact e gam = evalSubstFact e (val o gam) magic
+\end{code}
