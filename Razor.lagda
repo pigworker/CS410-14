@@ -451,3 +451,129 @@ eval0Fact :  {V : Set}(e : HExpV V)(gam : V -> Val) ->
              eval0 (subst e (val o gam)) == evalV e gam
 eval0Fact e gam = evalSubstFact e (val o gam) magic
 \end{code}
+
+
+\subsection{Identity and Composition for Substitution}
+
+Recall the type of |subst|.
+\[
+ |subst : {U V : Set} -> HExpV U -> (U -> HExpV V) -> HExpV V|
+\]
+Now, taking |U = V|, the constructor |var : V -> HExpV V| could be used as the
+substitution, which would give us
+\[
+ |subst (var x) var  = var x|
+\]
+It looks like there is a `do nothing' option! Let's prove it, trying the standard
+`proof plan' of induction on expressions, rewriting by the inductive hypotheses.
+%format idSubstFact = "\F{idSubstFact}"
+\begin{code}
+idSubstFact : {V : Set}(e : HExpV V) -> subst e var == e
+idSubstFact (var x)  = refl
+idSubstFact (val n)  = refl
+idSubstFact (e1 +++ e2)
+  rewrite idSubstFact e1 | idSubstFact e2
+  = refl
+\end{code}
+We call |var| the \textbf{identity substitution} because it maps expressions to
+themselves, just like the identity function.
+
+%format sg1 = "\V{\sigma_1}"
+%format sg2 = "\V{\sigma_2}"
+Meanwhile, suppose we have substitutions
+\[
+ |sg1 : U -> HExpV V| \qquad |sg2 : V -> HExpV W|
+\]
+We can deploy them, one then the other, on some |e : HExpV U| to get
+\[
+ |subst (subst e sg1) sg2 : HExpV W|
+\]
+%format -after- = "\F{-after-}"
+%format _-after-_ = _ -after- _
+but is there a \emph{single} substitution which would do the same job in one pass?
+Of course there is. We can \emph{compose} substitutions: it is conventional to make
+composition work right-to-left, so I call the operator |-after-| as a reminder.
+\begin{code}
+_-after-_ : {U V W : Set} -> (V -> HExpV W) -> (U -> HExpV V) -> U -> HExpV W
+(sg2 -after- sg1) u = subst (sg1 u) sg2
+\end{code}
+We had better check that it works as claimed. Again, the standard proof pattern works.
+%format compSubstFact = "\F{compSubstFact}"
+\begin{code}
+compSubstFact :  {U V W : Set}(sg2 : V -> HExpV W)(sg1 : U -> HExpV V)(e : HExpV U) ->
+                 subst e (sg2 -after- sg1) == subst (subst e sg1) sg2
+compSubstFact sg2 sg1 (var x)      = refl
+compSubstFact sg2 sg1 (val x)      = refl
+compSubstFact sg2 sg1 (e1 +++ e2)
+  rewrite compSubstFact sg2 sg1 e1 | compSubstFact sg2 sg1 e2
+  = refl
+\end{code}
+
+%format tsbus = "\F{tsbus}"
+So, |var| and |-after-| are related to |subst| in much the way that |id| and |o| relate
+to ordinary function application. We can tease that out a little more clearly if we consider
+the `agree on all inputs' relation for functions.\nudge{Many of us would
+prefer if this relation were just given by |==|, but that is sadly not so in today's
+Agda.}
+%format =^= = "\F{\doteq}"
+%format _=^=_ = _ =^= _
+\begin{code}
+_=^=_ : {S T : Set}(f g : S -> T) -> Set
+f =^= g = (s : _) -> f s == g s
+infixl 2 _=^=_
+\end{code}
+
+Ordinary function composition, |o|, absorbs |id| and is associative.
+%format funAbsorbLeft = "\F{funAbsorbLeft}"
+%format funAbsorbRight = "\F{funAbsorbRight}"
+%format funAssociative = "\F{funAssociative}"
+\begin{code}
+funAbsorbLeft   :  {S T : Set}(g : S -> T) ->
+                   id o g =^= g
+funAbsorbLeft g s = refl
+
+funAbsorbRight  :  {S T : Set}(f : S -> T) ->
+                   f o id =^= f
+funAbsorbRight f s = refl
+
+funAssociative  :  {R S T U : Set }(f : T -> U)(g : S -> T)(h : R -> S) ->
+                   (f o g) o h =^= f o (g o h)
+funAssociative f g h r = refl
+\end{code}
+
+With a little more work, the corresponding thing is true for substitutions.
+%format Subst = "\F{Subst}"
+%format substAbsorbLeft = "\F{substAbsorbLeft}"
+%format substAbsorbRight = "\F{substAbsorbRight}"
+%format substAssociative = "\F{substAssociative}"
+\begin{code}
+Subst : Set -> Set -> Set
+Subst S T = S -> HExpV T
+
+substAbsorbLeft   :  {S T : Set}(g : Subst S T) ->
+                     var -after- g =^= g
+substAbsorbLeft g s = idSubstFact (g s)
+
+substAbsorbRight  :  {S T : Set}(f : Subst S T) ->
+                     f -after- var =^= f
+substAbsorbRight f s = refl
+
+substAssociative  :  {R S T U : Set }(f : Subst T U)(g : Subst S T)(h : Subst R S) ->
+                     (f -after- g) -after- h =^= f -after- (g -after- h)
+substAssociative f g h r = compSubstFact f g (h r)
+\end{code}
+
+Moreover, if we flip |subst| around,\nudge{Programmers use |subst|;
+mathematicians use |tsbus|. I'm both.} we can see it as a map from substitutions to ordinary functions.
+\begin{code}
+tsbus : {U V : Set} -> (U -> HExpV V) -> (HExpV U -> HExpV V)
+tsbus sg e = subst e sg
+\end{code}
+What our earlier proofs really tell us is that |tsbus| fits the identity and composition structure
+of substitutions into that of functions.
+\[\begin{array}{lcl}
+|idSubstFact|        & |:| &  |{S : Set} ->| \\
+                     &     &  |tsbus {S}{S} var =^= id| \smallskip \\
+|compSubstFact|      & |:| &  |{R S T : Set}(f : Subst S T)(g : Subst R S) ->| \\
+                     &     &  |tsbus (f -after- g) =^= tsbus f o tsbus g|
+\end{array}\]
