@@ -271,9 +271,9 @@ a \emph{program} which computes the evidence for that property.
 correct :  (e : HExp){i : Nat}(s : Vec Nat i) ->
            execI (compileI e) s == eval e :> s
 correct (val n)      s  = refl
-correct (e1 +++ e2)  s
+correct (e1 +++ e2)  s  
   rewrite  correct e1 s
-        |  correct e2 (eval e1 :> s)
+        |  correct e2 (eval e1 :> s) 
   = refl
 \end{code}
 
@@ -522,6 +522,8 @@ _=^=_ : {S T : Set}(f g : S -> T) -> Set
 f =^= g = (s : _) -> f s == g s
 infixl 2 _=^=_
 \end{code}
+
+\textbf{Conor~} explain the |_| notation!
 
 Ordinary function composition, |o|, absorbs |id| and is associative.
 %format funAbsorbLeft = "\F{funAbsorbLeft}"

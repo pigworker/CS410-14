@@ -92,6 +92,7 @@ eval e = {!!}
 data HBCode : Set where
   PUSHN : Nat -> HBCode
   PUSHB : Two -> HBCode
+  ADD : HBCode
   _SEQ_ : HBCode -> HBCode -> HBCode
   _IFPOP_ : HBCode -> HBCode -> HBCode
 

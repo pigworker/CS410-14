@@ -31,3 +31,6 @@ eval2 (e +++ e')  =
   eval2 e -then- \ v ->
   eval2 e' -then- \ v' ->
   yes (v + v')
+
+_-?>_ : Set -> Set -> Set
+S -?> T = S -> Maybe T
