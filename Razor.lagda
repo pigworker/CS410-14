@@ -523,7 +523,14 @@ f =^= g = (s : _) -> f s == g s
 infixl 2 _=^=_
 \end{code}
 
-\textbf{Conor~} explain the |_| notation!
+\textbf{Notation.~} When we write an |_| in a pattern, we are saying that
+some input information is unimportant, but Agda also lets us write |_| in
+an \emph{expression}, in places where the thing we give is unimportant
+enough that we are willing not to read it. But the flipside is that the
+information has to be obviously inferrable. We're saying ``that bit's
+boring; you figure it out''. In the above example, the missing information is the type of |s|, but |s| is used as an argument to |f| and to |g|, so its
+type can only be |S|. By writing |_|, I saved myself the bother of bringing
+|S| into scope.
 
 Ordinary function composition, |o|, absorbs |id| and is associative.
 %format funAbsorbLeft = "\F{funAbsorbLeft}"
@@ -568,7 +575,7 @@ substAssociative f g h r = compSubstFact f g (h r)
 Moreover, if we flip |subst| around,\nudge{Programmers use |subst|;
 mathematicians use |tsbus|. I'm both.} we can see it as a map from substitutions to ordinary functions.
 \begin{code}
-tsbus : {U V : Set} -> (U -> HExpV V) -> (HExpV U -> HExpV V)
+tsbus : {U V : Set} -> Subst U V -> (HExpV U -> HExpV V)
 tsbus sg e = subst e sg
 \end{code}
 What our earlier proofs really tell us is that |tsbus| fits the identity and composition structure
@@ -579,3 +586,67 @@ of substitutions into that of functions.
 |compSubstFact|      & |:| &  |{R S T : Set}(f : Subst S T)(g : Subst R S) ->| \\
                      &     &  |tsbus (f -after- g) =^= tsbus f o tsbus g|
 \end{array}\]
+
+
+\section{A Categorical Interlude}
+
+\textbf{Need to expand on this.}
+
+A \textbf{category} is a collection of \textbf{objects} (which could
+be all sorts of things); between any two objects, there is a
+collection of \textbf{arrows}\nudge{or `morphisms' is you want to
+sound posh}. There is an \textbf{identity} arrow from each object to
+itself, and if one arrow finishes where another starts, you can form
+their \textbf{composition}. Composition is associative and absorbs
+identity on either side.
+
+We have seen that |Set| forms a category, with arrows |S -> T|. We have
+also seen that |Set| forms a category, with arrows |Subst U V|.
+
+Here's another category. This time, the objects are values in |Nat|. The
+arrows are given like so:
+%format >= = "\F{\ge}"
+%format _>=_ = _ >= _
+%format geRefl = >= "\F{Refl}"
+%format geTrans = >= "\F{Trans}"
+%format geUnique = >= "\F{Unique}"
+\begin{code}
+_>=_ : Nat -> Nat -> Set
+m >= zero = One
+zero >= suc n = Zero
+suc m >= suc n = m >= n
+\end{code}
+
+To say that |Nat| with |>=| forms a category is just to say that it is
+a \emph{preorder}: reflexive and transitive.
+\begin{code}
+geRefl : (n : Nat) -> n >= n                           -- `identity'
+geRefl zero      = <>
+geRefl (suc x)   = geRefl x
+
+geTrans : (l m n : Nat) -> m >= n -> l >= m -> l >= n  -- `composition'
+geTrans l        m        zero     mn  lm  = <>
+geTrans l        zero     (suc n)  ()  lm
+geTrans zero     (suc m)  (suc n)  mn  ()
+geTrans (suc l)  (suc m)  (suc n)  mn  lm  = geTrans l m n mn lm
+\end{code}
+
+Of course, we must check that composition is associative and absorbs
+identity. In this instance, that's an immediate consequence of the
+fact that there can be at most one proof of any |m >= n|.
+\begin{code}
+geUnique : (m n : Nat)(p q : m >= n) -> p == q
+geUnique m        zero     p   q = refl
+geUnique zero     (suc n)  ()  q
+geUnique (suc m)  (suc n)  p   q = geUnique m n p q
+\end{code}
+
+A \textbf{functor} $F$ mapping between categories $\mathbb{C}$ and $\mathbb{D}$, say,
+\begin{itemize}
+\item translates $\mathbb{C}$ objects to $\mathbb{D}$ objects by some operation $F_0$
+\item translates $\mathbb{C}$'s $S$-to-$T$ arrows into $\mathbb{D}$ arrows from $F_0\:S$ to $F_0\:T$
+  by some operation $F_1$, such that
+\item $F_1$ maps the $\mathbb{C}$-identity on $S$ to the $\mathbb{D}$-identity on $F_0\:S$
+\item $F_1$ maps every $\mathbb{C}$-composition |f o g| to the
+  $\mathbb{D}$-composition $(F_1\:|f|)$|o|$(F_1\:|g|)$
+\end{itemize}

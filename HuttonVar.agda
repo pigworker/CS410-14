@@ -17,6 +17,9 @@ subst (var x) s = s x
 subst (val n) s = val n
 subst (d +++ e) s = subst d s +++ subst e s
 
+hMap : {U V : Set} -> (U -> V) -> (HExp U -> HExp V)
+hMap f e = subst e (var o f)
+
 eval' : {V : Set} -> HExp V -> (V -> Nat) -> Nat
 eval' e g = eval (subst e (val o g))
 

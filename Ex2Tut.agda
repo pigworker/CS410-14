@@ -1,4 +1,4 @@
-module Ex2 where
+module Ex2Tut where
 
 {-----------------------------------------------------------------------------
 Name:
@@ -166,7 +166,14 @@ data THExpIf : HTy -> Set where
 {- 2.7 Implement a type-safe evaluator. -}
 
 teval : {t : HTy} -> THExpIf t -> HVal t
-teval e = {!!}
+teval (val x) = x
+
+myNUMExp : THExpIf NUM
+myNUMExp = val 42
+
+myBOOLExp : THExpIf BOOL
+myBOOLExp = val ff
+
 
 {- 2.8 Implement a type checker. -}
 
@@ -182,7 +189,7 @@ tcheck t e = {!!}
    the stack, but now we must worry about types. See next question for a hint. -}
 
 data THBCode : {- your indices here -} Set where
-  -- your constructors here
+  -- your constructor here
 
 {- 2.10 Implement the execution semantics for your code. You will need to think
    about how to represent a stack. The Ex2Prelude.agda file contains a very
