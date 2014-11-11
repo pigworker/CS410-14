@@ -48,7 +48,7 @@ HValIf = Two /+/ Nat
 for things which can go wrong. -}
 
 data Error (E X : Set) : Set where
-  ok : X -> Error E X
+  ok    : X -> Error E X
   error : E -> Error E X
 
 {- 2.1 Add a constructor to the following datatype for each different
@@ -253,7 +253,18 @@ data THBCode : List HTy -> List HTy -> Set where
    about how to represent a stack. The Ex2Prelude.agda file contains a very
    handy piece of kit for this purpose. You write the type, too. -}
 
--- your code here
+Stack : List HTy → Set
+Stack i = All HVal i
+
+-- forward composition
+_followedBy_ : {A B C : Set} (f : A → B) (g : B → C) → A → C
+f followedBy g = λ z → g (f z)
+
+tsemantics : {i j : List HTy} (c : THBCode i j) (s : Stack i) → Stack j
+tsemantics (PUSHV x)   s           = x , s
+tsemantics ADD         (m , n , s) = m + n , s
+tsemantics (c SEQ d)   s           = (tsemantics c followedBy tsemantics d) s
+tsemantics (t IFPOP f) (b , s)     = if b then tsemantics t s else tsemantics f s
 
 {- 2.11 Write the compiler from well typed expressions to safe code. -}
 
