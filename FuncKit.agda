@@ -127,7 +127,7 @@ kFun kId       X = X
 kFun (f k+ g)  X = kFun f X /+/ kFun g X
 kFun (f k* g)  X = kFun f X /*/ kFun g X
 
-kitMap : (k : Kit){S T : Set} -> (S -> T) -> kFun k S -> kFun k T
+kitMap : (k : Kit){S T : Set} -> (S -> T) -> (kFun k) S -> (kFun k) T
 kitMap (kK A) h a = a
 kitMap kId h s = h s
 kitMap (f k+ g) h (inl fs) = inl (kitMap f h fs)
@@ -135,13 +135,15 @@ kitMap (f k+ g) h (inr gs) = inr (kitMap g h gs)
 kitMap (f k* g) h (fs , gs) = kitMap f h fs , kitMap g h gs
 
 data Data (k : Kit) : Set where
-  [_] : kFun k (Data k) -> Data k
+  [_] : (kFun k) (Data k) -> Data k
 
 fold : (k : Kit){X : Set} -> (kFun k X -> X) -> Data k -> X
-fold k {X} f [ kd ] = f (kitMapFold k kd) where
+fold k {X} f [ kd ] = -- f (kitMap k (fold k f) kd)
+  f (kitMapFold k kd) where
   kitMapFold : (j : Kit) -> kFun j (Data k) -> kFun j X
   kitMapFold (kK A) a = a
   kitMapFold kId s = fold k f s
   kitMapFold (f k+ g) (inl fs) = inl (kitMapFold f fs)
   kitMapFold (f k+ g) (inr gs) = inr (kitMapFold g gs)
   kitMapFold (f k* g) (fs , gs) = kitMapFold f fs , kitMapFold g gs
+

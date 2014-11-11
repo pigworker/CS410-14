@@ -181,4 +181,55 @@ kT : Kit
 kT = kK One k+ (kId k* kId)
 
 exTree : Data kT
-exTree = {!-l!}
+exTree = [ inl <> ]
+
+FreeMo : Kit -> Set -> Set
+FreeMo k X = Data (k k+ kK X)
+
+return : (k : Kit) -> {A : Set} -> A -> FreeMo k A
+return k a = [ inr a ]
+
+bind : (k : Kit){A B : Set} ->
+        FreeMo k A ->
+        (A -> FreeMo k B) ->
+        FreeMo k B
+bind k {A} ma a2mb = fold (k k+ kK A)
+   (\ { (inl kb) -> [ inl kb ]
+      ; (inr a) -> a2mb a 
+      }) ma
+
+Error : Set -> Set -> Set
+Error E = FreeMo (kK E)
+
+kBitWrite : Kit
+kBitWrite = kK Two k* kId
+
+kBitRead : Kit
+kBitRead = kId k* kId
+
+RWBit : Set -> Set
+RWBit = FreeMo (kBitWrite k+ kBitRead)
+
+run : {X : Set} -> RWBit X ->
+       List Two -> List Two /*/ Error One X
+run [ inl (inl (b , p)) ] bs with run p bs
+run [ inl (inl (b , p)) ] bs | bs' , ex
+  = (b :> bs') , ex
+run [ inl (inr (tp , fp)) ] [] = [] , [ inl <> ]
+run [ inl (inr (tp , fp)) ] (tt :> bs)
+  = run tp bs
+run [ inl (inr (tp , fp)) ] (ff :> bs)
+  = run fp bs
+run [ inr x ] bs = [] , [ inr x ]
+
+data GenMo (C : Set)
+           (R : C -> Set)
+           (X : Set) : Set where
+  ret : X -> GenMo C R X
+  _?-_ : (c : C)(k : R c -> GenMo C R X) -> GenMo C R X
+
+_>>=_ : {C : Set}{R : C -> Set}
+        {A B : Set} -> GenMo C R A -> (A -> GenMo C R B)
+          -> GenMo C R B
+ret a >>= f = f a
+(c ?- k) >>= f = c ?- (\ r -> k r >>= f)
