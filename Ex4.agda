@@ -99,6 +99,8 @@ ReadR j c = {!!}
 readNext : (j : ReadState)(c : ReadC j) -> ReadR j c -> ReadState
 readNext j c r = {!!}
 
+READ : ReadState => ReadState
+READ = ReadC <! ReadR / readNext
 
 ---------------------------------------------------------------------------
 -- COMBINING TWO INTERFACES WITH SHARED STATE
