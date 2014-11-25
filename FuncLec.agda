@@ -222,14 +222,166 @@ run [ inl (inr (tp , fp)) ] (ff :> bs)
   = run fp bs
 run [ inr x ] bs = [] , [ inr x ]
 
-data GenMo (C : Set)
-           (R : C -> Set)
-           (X : Set) : Set where
-  ret : X -> GenMo C R X
-  _?-_ : (c : C)(k : R c -> GenMo C R X) -> GenMo C R X
+record Container : Set1 where
+  constructor _<!_
+  field
+    Command : Set                 -- aka Shape
+    Response : Command -> Set     -- aka Position
+open Container public
 
-_>>=_ : {C : Set}{R : C -> Set}
-        {A B : Set} -> GenMo C R A -> (A -> GenMo C R B)
-          -> GenMo C R B
-ret a >>= f = f a
-(c ?- k) >>= f = c ?- (\ r -> k r >>= f)
+record Sigma (S : Set)(T : S -> Set) : Set where
+  constructor _,_
+  field
+    fst : S
+    snd : T fst
+open Sigma public
+
+_*'_ : Set -> Set -> Set
+S *' T = Sigma S \ _ -> T
+
+_+s_ : Set -> Set -> Set
+S +s T = Sigma Two \ { tt -> S ; ff -> T }
+
+[[_]] : Container -> Set -> Set
+[[ C <! R ]] Y = Sigma C (\ c -> R c -> Y) 
+
+cmap : (F : Container) -> {S T : Set} -> (S -> T) -> [[ F ]] S -> [[ F ]] T
+cmap F f (c , k) = c , (\ r -> f (k r))
+
+data GenMo (F : Container)
+           (X : Set) : Set where
+  ret : X -> GenMo F X
+  <_> : [[ F ]] (GenMo F X) -> GenMo F X
+
+_>>=_ : {F : Container}
+        {A B : Set} -> GenMo F A -> (A -> GenMo F B)
+          -> GenMo F B
+ret a      >>= f = f a
+< c , k >  >>= f = < c , (\ r -> k r >>= f) >
+
+data Fail : Set where
+  fail : Fail
+
+FailR : Fail -> Set
+FailR fail = Zero
+
+Maybe : Container
+Maybe = Fail <! FailR
+
+! : {F : Container} ->
+    (c : Command F) -> GenMo F (Response F c)
+! c = < c , ret >
+
+_c+_ : Container -> Container -> Container
+(C0 <! R0) c+ (C1 <! R1) = (C0 /+/ C1) <! (\ { (inl c0) -> R0 c0 ; (inr c1) -> R1 c1 })
+
+inC : {F G : Container}{X : Set} -> [[ F ]] X /+/ [[ G ]] X -> [[ F c+ G ]] X
+inC (inl (fc , fk)) = inl fc , fk
+inC (inr (gc , gk)) = inr gc , gk
+
+_c*_ : Container -> Container -> Container
+(C0 <! R0) c* (C1 <! R1) = (C0 /*/ C1) <! (\ { (c0 , c1) -> R0 c0 /+/ R1 c1 })
+
+pairC : {F G : Container}{X : Set} -> [[ F ]] X /*/ [[ G ]] X -> [[ F c* G ]] X
+pairC ((fc , fk) , (gc , gk))
+  = (fc , gc) , (\ { (inl fr) -> fk fr ; (inr gr) -> gk gr })
+
+kContainer : Kit -> Container
+kContainer (kK A) = A <! (\ _ -> Zero)
+kContainer kId = One <! (\ _ -> One)
+kContainer (k k+ k') = kContainer k c+ kContainer k'
+kContainer (k k* k') = kContainer k c* kContainer k'
+
+tail : {X : Set} -> List X -> GenMo Maybe (List X)
+tail [] = ! fail >>= (\ ())
+tail (x :> xs) = ret xs
+
+try : {X : Set} -> GenMo Maybe X -> X -> X
+try (ret x)       _ = x
+try < fail , k >  x = x
+
+data State (S : Set) : Set where
+  get : State S
+  put : S -> State S
+
+StateR : {S : Set} -> State S -> Set
+StateR {S} get = S
+StateR (put x) = One
+
+StateC : Set -> Container
+StateC S = State S <! StateR
+
+c++ : GenMo (StateC Nat) Nat
+c++ = ! get >>= \ c -> ! (put (suc c)) >>= \ _ -> ret c
+
+runState : {S X : Set} -> GenMo (StateC S) X ->
+  S -> X /*/ S
+runState (ret x) s = x , s
+runState < get , k > s = runState (k s) s
+runState < put s' , k > s = runState (k <>) s'
+
+test : (Nat /*/ Nat) /*/ Nat
+test = runState (c++ >>= \ x -> c++ >>= \ y -> ret (x , y)) 41
+
+data Choose : Set where
+  choose : Choose
+
+ChooseR : Choose -> Set
+ChooseR choose = Two
+
+ChooseC : Container
+ChooseC = Choose <! ChooseR
+
+truey : {X : Set} -> GenMo ChooseC X -> X
+truey (ret x) = x
+truey < choose , k > = truey (k tt)
+
+streamy : {X : Set} ->
+          GenMo ChooseC X -> (Nat -> Two) -> X
+streamy (ret x) s = x
+streamy < choose , k > s = streamy (k (s zero)) (s o suc)
+
+_++_ : {X : Set} -> List X -> List X -> List X
+[] ++ ys = ys
+x :> xs ++ ys = x :> (xs ++ ys)
+
+infixr 3 _++_
+
+pokemon : {X : Set} -> GenMo ChooseC X -> List X
+pokemon (ret x) = x :> []
+pokemon < choose , k > = pokemon (k tt) ++ pokemon (k ff)
+
+FailOrChoose : Container
+FailOrChoose = Maybe c+ ChooseC
+
+answers : {X : Set} -> GenMo FailOrChoose X -> List X
+answers (ret x) = x :> []
+answers < inl fail , k > = []
+answers < inr choose , k > = answers (k tt) ++ answers (k ff)
+
+data Sender (X : Set) : Set where
+  send : X -> Sender X
+
+SenderC : Set -> Container
+SenderC X = Sender X <! \ _ -> One
+
+data Receiver : Set where
+  receive : Receiver
+
+ReceiverC : Set -> Container
+ReceiverC X = Receiver <! \ _ -> X
+
+TransducerC : Set -> Container
+TransducerC X = ReceiverC X c+ SenderC X
+
+FlakyTransducerC : Set -> Container
+FlakyTransducerC X = Maybe c+ (ReceiverC X c+ SenderC X)
+
+pipe : {X Y : Set} -> GenMo (TransducerC X) One -> GenMo (TransducerC X) Y ->
+         GenMo (FlakyTransducerC X) Y
+pipe (ret <>) (ret y) = ret y
+pipe (ret <>) < inl receive , k > = < inl fail , (\ ()) >
+pipe < inl receive , k > q = < inr (inl receive) , (\ x -> pipe (k x) q) >
+pipe < inr (send x) , k > (ret y) = ret y
+pipe < inr (send x) , k > < inl receive , j > = pipe (k <>) (j x)
+pipe p < inr (send x) , k > = < inr (inr (send x)) , (\ _ -> pipe p (k <>)) >
