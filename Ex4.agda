@@ -234,6 +234,108 @@ cp sourceFile targetFile = {!!}
   You might want to split these phases apart.
 -}
 
+
+---------------------------------------------------------------------------
+-- SCRIPTING INTERACTION
+---------------------------------------------------------------------------
+
+{- 4.7.1 Show how to take a command-response interface and deliver its
+   "scripted" version, where a script command consists of any permitted
+   (possibly empty) sequence of the given commands. -}
+
+SCRIPT : {I : Set} -> I => I -> I => I
+SCRIPT {I} CRn = Game CRn (\ I -> One) <! Rs / ns where
+  Rs : (i : I) -> Game CRn (\ I -> One) i -> Set
+  Rs i cs = {!!}
+  ns : (i : I)(cs : Game CRn (\ I -> One) i) -> Rs i cs -> I
+  ns i cs rs = {!!}
+
+{- 4.7.2 Show how to take a strategy for scripted interaction and turn
+   it into a strategey for unscripted interaction, by running the scripts
+   one command at a time. You may find it useful to build a helper function
+   to process one script. -}
+
+unScript : {I : Set}(CRn : I => I){X : I -> Set}{i : I} ->
+           Game (SCRIPT CRn) X i -> Game CRn X i
+unScript CRn g = {!!}
+
+-- HINT doing recursion in the "fold" pattern may help
+
+
+---------------------------------------------------------------------------
+-- INDEXED CONTAINER DRIVERS(*)
+-- (*) The researchers who invented this stuff are fans of The Fall
+-- (by which I mean the group led my Mark E Smith who wrote the song
+-- The Container Drivers, not some johnny-come-lately Northern Irish
+-- serial killer drama).
+---------------------------------------------------------------------------
+
+record Driver {I J : Set}(Sync : I -> J -> Set)
+              (Hi : I => I)(Lo : J => J) : Set where
+  -- Hi is a high-level command-response interface
+  -- Lo is a low-level command-response interface
+  -- Sync specifies which high and low level states are compatible
+  -- and what you expect to know at the time
+  field
+    -- assuming states are in sync; it should be possible to map
+    -- high-level commands to low-level commands...
+    hiClo :  (i : I)(j : J) -> Sync i j ->
+             Command Hi i -> Command Lo j
+    -- ...and afterwards to translate the low-level response to that
+    -- command back up to the high-level
+    loRhi :  (i : I)(j : J)(s : Sync i j)(c : Command Hi i) ->
+             Response Lo j (hiClo i j s c) -> Response Hi i c
+    -- moreover, the resulting states should be in sync
+    nSync :  (i : I)(j : J)(s : Sync i j)(c : Command Hi i)
+             (r : Response Lo j (hiClo i j s c)) ->
+             Sync (next Hi i c (loRhi i j s c r)) (next Lo j (hiClo i j s c) r)
+open Driver public
+
+
+---------------------------------------------------------------------------
+-- A DANGEROUS HASKELL IO COMMAND-RESPONSE SYSTEM
+---------------------------------------------------------------------------
+
+data Maybe (X : Set) : Set where
+  yes : X -> Maybe X
+  no  : Maybe X
+
+data IOMode : Set where
+  readMode writeMode appendMode readWriteMode : IOMode
+
+postulate Handle : Set
+
+data HaskellIOCommand (_ : One) : Set where
+  hOpen : String -> IOMode -> HaskellIOCommand <>
+  hClose hIsEOF hGetChar : Handle -> HaskellIOCommand <>
+  hPutChar : Handle -> Char -> HaskellIOCommand <>
+  hError : String -> HaskellIOCommand <>
+
+HaskellIOResponse : (i : One) -> HaskellIOCommand i -> Set
+HaskellIOResponse i (hOpen f m) = Maybe Handle
+HaskellIOResponse i (hClose h) = One
+HaskellIOResponse i (hIsEOF h) = Two
+HaskellIOResponse i (hGetChar h) = Char
+HaskellIOResponse i (hPutChar h c) = One
+HaskellIOResponse i (hError e) = Zero
+
+HASKELLIO : One => One
+HASKELLIO = HaskellIOCommand <! HaskellIOResponse / _
+
+
+---------------------------------------------------------------------------
+-- SCRIPTING INTERACTION
+---------------------------------------------------------------------------
+
+{- 4.8 Your mission is to translate your lovely, safe characterisation
+   of reading and writing into its dodgy Haskell counterpart. Of course,
+   your code shouldn't do anything dodgy. You will need to think what
+   information must be available when you are in each state.
+-}
+
+safe2unsafe : Driver (\ i j -> {!!}) CPInterface (SCRIPT HASKELLIO)
+safe2unsafe = {!!}
+
 ---------------------------------------------------------------
--- TO BE CONTINUED...
+-- TO BE CONTINUED... BUT NOT WITH ANY MORE CODING OBLIGATIONS
 ---------------------------------------------------------------
