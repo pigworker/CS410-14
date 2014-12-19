@@ -2,6 +2,7 @@ module CoInd where
 
 open import Ex1Prelude
 open import FuncKit
+open import IxCon
 
 postulate
   Delay : {a : _} -> Set a -> Set a
@@ -92,3 +93,21 @@ runFor _    [ inl x ] = inl x
 runFor (suc n) [ inr px ] = runFor n (force px)
 runFor zero px = inr px
 
+{-
+data Game {I : Set}(C : I => I)(Win : I -> Set)(i : I) : Set where
+  win : Win i -> Game C Win i
+  <_> : FObj [[ C ]] (Game C Win) i -> Game C Win i
+-}
+
+data Oppo {I : Set}(C : I => I)(i : I) : Set where
+  oppo : ((c : Command C i) ->
+             Sigma (Response C i c) \ r ->
+                Delay (Oppo C (next C i c r))) ->
+         Oppo C i
+
+runGame : {I : Set}{C : I => I}{Win : I -> Set}{i : I} ->
+          Game C Win i -> Oppo C i ->
+          Sigma I \ i' -> Win i' /*/ Oppo C i'
+runGame {i = i'} (win x) o = i' , (x , o)
+runGame < c , k > (oppo f) with f c
+runGame < c , k > (oppo f) | r , o = runGame (k r) (force o)
