@@ -1,5 +1,9 @@
 module Ex4Sol where
 
+{- Mark Scheme
+   as indicated, below, totalling 15
+-}
+
 open import Ex1Prelude
 open import IxCon
 
@@ -49,7 +53,7 @@ WriteR .opened closeWrite            = One
    state. You should ensure that you can write characters only to
    a successfully opened file, and that you can write as many as
    you want. It should also be possible to insist that a process
-   closes its file. -}
+   closes its file. (1 mark) -}
 
 {-
 writeNext : (j : WriteState)(c : WriteC j) -> WriteR j c -> WriteState
@@ -77,7 +81,8 @@ data ReadState : Set where
   opened : (eof : Two) -> ReadState    -- eof is tt if we're at end of file
   closed : ReadState
 
-{- 4.2 Finish the READ implementation, in accordance with the description. -}
+{- 4.2 Finish the READ implementation, in accordance with the description.
+   (3 marks, for commands, responses and next)  -}
 
 {-
 -- Commands
@@ -132,6 +137,7 @@ READ = ReadC <! ReadR / readNext
        can combine them into one indexed container which lets you choose a
        command from either menu and evolves the state as specified by
        whichever interface offered the chosen command.
+       (2 marks, one for commands, one for the rest)
 -}
 
 _=+=_ : {I : Set} -> I => I -> I => I -> I => I
@@ -150,7 +156,8 @@ _=+=_ : {I : Set} -> I => I -> I => I -> I => I
        commands and responses over a state, I /*/ J, where the J is just
        useless information which never changes. (This operation isn't
        super-useful on its own, but it's handy in combination with other
-       things. -}
+       things. (2 marks; half each for C, R, n, half for deploying
+       symmetry) -}
 
 GrowR : {I J : Set} -> I => I -> (I /*/ J) => (I /*/ J)
 GrowR (C <! R / n)
@@ -173,7 +180,7 @@ GrowL (C <! R / n)
 
 {- 4.5 Making use of 4.4 and 4.5, show how to combine two interfaces which
        operate independently on separate state: commands from one should
-       not affect the state of the other.
+       not affect the state of the other. (1 mark)
 -}
 
 {-
@@ -243,7 +250,7 @@ BothClosed : IndexCP -> Set
 BothClosed (closed , closed) = String
 BothClosed _ = Zero
 
-InterfaceCP : IndexCP => IndexCP
+InterfaceCP : IndexCP => IndexCP  -- (1 mark)
 InterfaceCP = ERROR BothClosed =+= (READ <+> WRITE)
 
 SuccessCP : IndexCP -> Set
@@ -262,6 +269,7 @@ copyOpen : (b : Two) -> Game InterfaceCP SuccessCP (opened b , opened)
 copyOpen tt = < inr (inl closeRead) , ( \ _ -> < inr (inr closeWrite) , ( \ _ -> win <> ) > ) >
 copyOpen ff = < inr (inl readChar) , ( \ { (c , b) -> < inr (inr (writeChar c)) , (\ _ -> copyOpen b) > } ) >
 
+-- (3 marks for beginning, middle, end)
 cp : (sourceFile targetFile : String) -> Game InterfaceCP SuccessCP initialCP
 cp sourceFile targetFile
   = < inr (inl (openRead sourceFile)) , (\
@@ -274,7 +282,7 @@ cp sourceFile targetFile
   ; closed -> < inl (error (concat ("Could not open " :> sourceFile :> []))) , (\ ()) > 
   }) >
 
-
+-- (1 mark)
 SCRIPT : {I : Set} -> I => I -> I => I
 SCRIPT {I} CRn = Game CRn (\ I -> One) <! Rs / ns where
   Rs : (i : I) -> Game CRn (\ I -> One) i -> Set
@@ -284,6 +292,7 @@ SCRIPT {I} CRn = Game CRn (\ I -> One) <! Rs / ns where
   ns i (win x) rs = i
   ns i < c , k > (r , rs) = ns (next CRn i c r) (k r) rs
 
+-- (1 mark)
 unScript : {I : Set}(CRn : I => I){X : I -> Set}{i : I} ->
            Game (SCRIPT CRn) X i -> Game CRn X i
 runScript : {I : Set}(CRn : I => I){X : I -> Set}{i : I} ->
@@ -297,7 +306,7 @@ unScript CRn {X}{i} < cs , k > = runScript CRn cs \ rs -> unScript CRn (k rs)
 runScript CRn (win x) k = k <>
 runScript CRn < c , f > k = < c , (\ r -> runScript CRn (f r) \ rs -> k (r , rs)) >
 
-
+-- the rest was for fun
 data Maybe (X : Set) : Set where
   yes : X -> Maybe X
   no  : Maybe X

@@ -15,6 +15,13 @@ TOP TIP: if you have annoyingly many open goals, comment out big chunks of the
 file with a multi-line comment a bit like this one.
 -----------------------------------------------------------------------------}
 
+{- Mark scheme:
+   The programming for each part is worth one mark.
+   the explanation of why the impossible cases are impossible is worth
+   one mark.
+   The total number of available marks is 15.
+-}
+
 
 {----------------------------------------------------------------------------}
 {- 1.1: Tree Sort -}

@@ -21,6 +21,11 @@ type, we acquire the risk of type mismatch. The idea here is to
 explore different approaches to managing that risk.
 -----------------------------------------------------------------------------}
 
+{- Mark scheme
+   Each part is worth one mark each, apart from the four labelled
+   as worth two. The total number of marks available is 15.
+-}
+
 open import Ex1Prelude
 open import Ex2Prelude
 
@@ -79,6 +84,7 @@ error e >>= s2et = error e
 {- 2.3 Implement an evaluator for HExpIf. Be sure to add only numbers and
    to branch only on Booleans. Report type mismatches as errors. You should
    use _>>=_ to help with the propagation of error messages.
+   (2 marks)
 -}
 
 natOrBust : {E : Set} -> E -> HValIf -> Error E Nat
@@ -123,7 +129,7 @@ data HBCode : Set where
 
 {- 2.4 Populate the type of possible execution errors and implement the
    execution behaviour of HBCode, operating on a stack represented as
-   a list of HValIf values.
+   a list of HValIf values. (2 marks)
 -}
 
 data ExecError : Set where
@@ -163,6 +169,7 @@ BOOL =HTy= BOOL  = tt
    give an informative error report if the expression it receives is
    ill typed. Your compiler should also ensure (at least informally) that
    the code produced will never trigger any execution errors.
+   (2 marks)
 -}
 
 data CompileError : Set where
@@ -220,7 +227,7 @@ teval (val x) = x
 teval (d +++ e) = teval d + teval e
 teval (hif e then t else f) = if teval e then teval t else teval f
 
-{- 2.8 Implement a type checker. -}
+{- 2.8 Implement a type checker. (2 marks) -}
 
 data TypeError : Set where
   wanted_got_ : HTy -> HExpIf -> TypeError
