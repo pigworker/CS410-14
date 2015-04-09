@@ -62,6 +62,14 @@ take m xs       with chop m xs
 take m .(xs ++ ys) | is++ xs ys = xs
 -}
 
+-- EXTRA! For no marks, but some utility in future, check that you can
+-- use chop to define the function which just gives you the pair of the
+-- prefix and the suffix.
+
+vchop : {X : Set}(m : Nat){n : Nat} ->
+        Vec X {!!} -> Vec X m /*/ Vec X n
+vchop x xs = {!!}
+
 
 ---------------------------------------------------------------------------
 -- APPLICATIVE STRUCTURE                                                 --
@@ -107,3 +115,9 @@ data Unzip {n : Nat}{X Y : Set} : Vec (X /*/ Y) n -> Set where
 unzip : {n : Nat}{X Y : Set}(xys : Vec (X /*/ Y) n) -> Unzip xys
 unzip xys = {!!}
 
+-- EXTRA! For no marks, but some utility in future, check that you can
+-- use unzip to define the function which just gives you the pair of the
+-- two vectors.
+
+vunzip : {X Y : Set}{n : Nat} -> Vec (X /*/ Y) n -> Vec X n /*/ Vec Y n
+vunzip xys = {!!}
