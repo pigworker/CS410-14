@@ -28,7 +28,7 @@ record Sg (S : Set)(T : S -> Set) : Set where
   field
     fst : S
     snd : T fst
-open Sg
+open Sg public
 _/*/_ : Set -> Set -> Set
 S /*/ T = Sg S \ _ -> T
 infixr 3 _/*/_
