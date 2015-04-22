@@ -51,9 +51,20 @@ It's a five episode story, hopefully not with cliffhangers.
    compile executables built from the pieces and control content from
    the keyboard.
 
+![Episode 4 going](Ex6-4-Going.png)
+
 5. **Applications** where you learn to build interactive systems which
    get keystrokes and give updates, then hang them in a framework
    which supports *two* of them in separate windows, cooperatively.
+
+Edit: we're ahead of the game; episode 4 already has two windows!
+
+
+## Mac Users
+
+Don't use a regular terminal for this, as shift-up and shift-down
+aren't handled properly. Give [iterm2](http://iterm2.com/) a go
+instead. I'm grateful to Dan Piponi for this valuable clue.
 
 
 ## Support
