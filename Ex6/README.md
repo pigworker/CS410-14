@@ -51,7 +51,7 @@ It's a five episode story, hopefully not with cliffhangers.
    compile executables built from the pieces and control content from
    the keyboard.
 
-![Episode 4 going](Ex6-4-Going.png)
+   ![Episode 4 going](Ex6-4-Going.png)
 
 5. **Applications** where you learn to build interactive systems which
    get keystrokes and give updates, then hang them in a framework
