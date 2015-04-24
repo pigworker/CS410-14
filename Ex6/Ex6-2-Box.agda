@@ -1,7 +1,7 @@
 module Ex6-2-Box where
 
 open import Ex6-Setup
-open import Ex6-1-Vec-Dummy
+open import Ex6-1-Vec
 
 ---------------------------------------------------------------------------
 -- BOXES (5 marks)                                                       --
