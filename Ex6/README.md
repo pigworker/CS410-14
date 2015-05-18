@@ -2,11 +2,14 @@
 
 I thought I should provide an overview of both the content and the
 procedure. But first, strategic thinkers will need to know the
-**deadline**, which is 23:59.59 on Monday 25 May 2015. That is, I am
-giving you as much time as I can, still leaving enough of a window to
-mark your stuff (not in your presence, this time) before the deadline
-which will be imposed on me to return your scores to the exam board.
-You're playing for the last 25 of the 100 available marks.
+**deadline**, which was 23:59.59 on Monday 25 May 2015.  **DEADLINE
+EXTENSION:** you now have until 5pm on Wednesday 27 May 2015. That is,
+I am giving you as much time as I can, still leaving enough of a
+window to mark your stuff (not in your presence, this time) before the
+deadline which will be imposed on me to return your scores to the exam
+board.  (That deadline turned out to be later than I had anticipated,
+so I'm passing the benefit on to you.)  You're playing for the last 25
+of the 100 available marks.
 
 **Request.** If you think you're done with exercise 6 before the
 deadline, please let me know. It will significantly reduce my stress
