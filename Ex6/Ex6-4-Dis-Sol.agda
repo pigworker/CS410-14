@@ -1,4 +1,4 @@
-module Ex6-4-Dis where
+module Ex6-4-Dis-Sol where
 
 open import Ex6-Setup
 open import Ex6-1-Vec-Sol
@@ -84,10 +84,10 @@ sillyHandler _ s = s , []   -- otherwise, relax
 -- state. The initial size of 0 by 0 will provoke an immediate resize event,
 -- giving the correct size!
 
-{- -}
+{- -
 main : IO Thud
 main = mainLoop ('*' , 0 , 0) sillyHandler
-{- -}
+- -}
 
 -- To run this program, start a terminal, change to your Ex6 directory, then
 --
@@ -125,10 +125,18 @@ Painting = Box (HoleOr (Matrix ColourChar))
 -- (1 mark)
 
 paintMatrix : Painting []> Matrix ColourChar
-paintMatrix p = {!!}
+paintMatrix p = pasteBox matrixPasteKit (mapBox fill p) where
+  fill : HoleOr (Matrix ColourChar) []> Matrix ColourChar
+  fill Hole = vec (vec (black - ' ' / white))
+  fill [ m ] = m
+
+vecFoldR : {X Y : Set} -> (X -> Y -> Y) -> Y -> {n : Nat} -> Vec X n -> Y
+vecFoldR c n [] = n
+vecFoldR c n (x :: xs) = c x (vecFoldR c n xs)
 
 paintAction : {w h : Nat} -> Matrix ColourChar w h -> List Action
-paintAction = {!!}
+paintAction = vecFoldR (vecFoldR (\ {(f - c / b) k -> \ as ->
+  fgText f :: bgText b :: sendText (c :: []) :: k as}) id) []
 
 
 ---------------------------------------------------------------------------
@@ -149,7 +157,7 @@ record Application (S : Nat -> Nat -> Set) : Set where
     handleResize  : {w h : Nat}(w' h' : Nat) -> S w h -> S w' h'
     paintMe       : S []> Painting
     cursorMe      : {w h : Nat} -> S w h -> Nat /*/ Nat  -- x,y coords
-open Application
+open Application public
 
 -- Now your turn. Build the appropriate handler to connect these
 -- applications with mainLoop. Again, work in two stages, first
@@ -161,15 +169,20 @@ AppState S = Sg Nat \ w -> Sg Nat \ h -> S w h
 
 appPaint : {S : Nat -> Nat -> Set}{w h : Nat} ->
            Application S -> S w h -> List Action
-appPaint app s = {!!}
+appPaint app s =
+  goRowCol 0 0 :: paintAction (paintMatrix p)
+  +-+ (goRowCol (snd xy) (fst xy) :: [])
   where
-    p  = paintMe app s        -- a wee reminder of how to use record stuff
+    p  = paintMe app s
     xy = cursorMe app s
 
 appHandler : {S : Nat -> Nat -> Set} ->
            Application S ->
            Event -> AppState S -> AppState S /**/ List Action
-appHandler app e whs = {!!}
+appHandler app (key k) (w , h , s) = (w , h , s') , appPaint app s'
+  where s' = handleKey app k s
+appHandler app (resize w' h') (w , h , s) = (w' , h' , s') , appPaint app s'
+  where s' = handleResize app w' h' s
 
 -- Your code turns into a main function, as follows.
 
@@ -230,10 +243,20 @@ compare x y = cutCompare x y y x (x + y) refl (plusCommFact x y)
 -- the next bit.
 
 cropPadLR : (w h w' : Nat) -> Painting w h -> Painting w' h
-cropPadLR w h w' p = {!!}
+cropPadLR w h w' p with compare w w'
+cropPadLR w h w' p | cutLt d q _ = leri w p (suc d) [ Hole ] q
+cropPadLR w h .w p | cutEq refl _ = p
+cropPadLR w h w' p | cutGt d q _
+  = fst (CutKit.cutLR (boxCutKit (holeCutKit matrixCutKit))
+         w h w' (suc d) q p)
 
 cropPadTB : (w h h' : Nat) -> Painting w h -> Painting w h'
-cropPadTB w h h' p = {!!}
+cropPadTB w h h' p with compare h h'
+cropPadTB w h h' p | cutLt d q _ = tobo h p (suc d) [ Hole ] q
+cropPadTB w h .h p | cutEq refl _ = p
+cropPadTB w h h' p | cutGt d q _
+  = fst (CutKit.cutTB (boxCutKit (holeCutKit matrixCutKit))
+         w h h' (suc d) q p)
 
 ---------------------------------------------------------------------------
 -- THE MOVING RECTANGLE                                                  --
@@ -269,13 +292,58 @@ cropPadTB w h h' p = {!!}
 --
 -- (2 marks, one for key handling, one for painting)
 
-rectApp : Colour -> Application \ w h -> {!!}
+record RectState : Set where
+  constructor rect
+  field
+    gapL rectW : Nat
+    gapT rectH : Nat
+
+rectKey : Key -> RectState -> RectState
+rectKey (arrow normal up) (rect gapL rectW (suc gapT) rectH)
+  = rect gapL rectW gapT rectH
+rectKey (arrow normal down) (rect gapL rectW gapT rectH)
+  = rect gapL rectW (suc gapT) rectH
+rectKey (arrow normal left) (rect (suc gapL) rectW gapT rectH)
+  = rect gapL rectW gapT rectH
+rectKey (arrow normal right) (rect gapL rectW gapT rectH)
+  = rect (suc gapL) rectW gapT rectH
+rectKey (arrow shift up) (rect gapL rectW gapT (suc rectH))
+  = rect gapL rectW gapT rectH
+rectKey (arrow shift down) (rect gapL rectW gapT rectH)
+  = rect gapL rectW gapT (suc rectH)
+rectKey (arrow shift left) (rect gapL (suc rectW) gapT rectH)
+  = rect gapL rectW gapT rectH
+rectKey (arrow shift right) (rect gapL rectW gapT rectH)
+  = rect gapL (suc rectW) gapT rectH
+rectKey _ s = s
+
+rectApp : Colour -> Application \ _ _ -> RectState
 rectApp c = record
-  {  handleKey     = {!!}
-  ;  handleResize  = {!!}
-  ;  paintMe       = {!!}
-  ;  cursorMe      = {!!}
-  }
+  {  handleKey     = \ k -> rectKey k
+  ;  handleResize  = \ _ _ -> id
+  ;  paintMe = \ { (rect gapL rectW gapT rectH) ->
+       cropPadTB _ _ _ (cropPadLR _ _ _
+       (tobo gapT [ Hole ] (suc (rectH + 1))
+        (leri gapL [ Hole ] (suc (rectW + 1))
+         (tobo 1 (horiz rectW) _
+         (tobo rectH
+           (leri 1 (vert rectH) _ 
+           (leri rectW (interior rectW rectH) 
+           1 (vert rectH) refl) refl) 
+         1 (horiz rectW) refl) refl)
+       refl) refl)) }
+  ;  cursorMe = \ { (rect gapL rectW gapT rectH) ->
+       (1 + gapL + rectW) , (1 + gapT + rectH)
+     }
+  } where
+  horiz : (w : Nat) -> Painting (suc (w + 1)) 1
+  horiz w = leri 1 [ [ (white - '+' / c :: []) :: [] ] ] _
+    (leri w [ [ vec (white - '-' / c) :: [] ] ] 1
+      [ [ (white - '+' / c :: []) :: [] ] ] refl) refl
+  vert : (h : Nat) -> Painting 1 h
+  vert h = [ [ vec (vec (white - '|' / c)) ] ]
+  interior : (w h : Nat) -> Painting w h
+  interior w h = [ [ vec (vec (white - ' ' / c)) ] ]
 
 {- -
 main : IO Thud
@@ -311,12 +379,28 @@ main = appMain (rectApp blue) (rect 10 40 3 15)
 frontBack : {S T : Nat -> Nat -> Set} ->
   Application S ->
   Application T ->
-  Application \ w h -> {!!}
+  Application \ w h -> (S w h /*/ T w h) /+/ (T w h /*/ S w h)
 frontBack appS appT = record
-  { handleKey     = {!!}
-  ; handleResize  = {!!}
-  ; paintMe       = {!!}
-  ; cursorMe      = {!!}
+  { handleKey = \
+    { tab (inl (s , t))  -> inr (t , s)
+    ; tab (inr (t , s))  -> inl (s , t)
+    ; k (inl (s , t))    -> inl (handleKey appS k s , t)
+    ; k (inr (t , s))    -> inr (handleKey appT k t , s)
+    }
+  ; handleResize = \
+    { w h (inl (s , t)) -> inl  (  handleResize appS w h s
+                                ,  handleResize appT w h t  )
+    ; w h (inr (t , s)) -> inr  (  handleResize appT w h t
+                                ,  handleResize appS w h s  )
+    }
+  ; paintMe = \ 
+    { (inl (s , t)) -> overlay matrixCutKit (paintMe appS s) (paintMe appT t)
+    ; (inr (t , s)) -> overlay matrixCutKit (paintMe appT t) (paintMe appS s)
+    }
+  ; cursorMe = \
+    { (inl (s , t)) -> cursorMe appS s
+    ; (inr (t , s)) -> cursorMe appT t
+    }    
   }
 
 -- By way of example, let's have a blue rectangle and a red rectangle.

@@ -1,10 +1,10 @@
 module Ex6-5-App where
 
 open import Ex6-Setup
-open import Ex6-1-Vec
-open import Ex6-2-Box
-open import Ex6-3-Cut
-open import Ex6-4-Dis
+open import Ex6-1-Vec-Sol
+open import Ex6-2-Box-Sol
+open import Ex6-3-Cut-Sol
+open import Ex6-4-Dis-Sol
 
 
 ---------------------------------------------------------------------------
